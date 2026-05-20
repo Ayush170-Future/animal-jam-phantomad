@@ -1,0 +1,23 @@
+fileFormatVersion: 2
+guid: 640427acb90df8241b1a771dbbe6a3f4
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - Dimbo
+  - RF Krabuler
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 39cf6b1b352f5479580467cbe27bd641, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

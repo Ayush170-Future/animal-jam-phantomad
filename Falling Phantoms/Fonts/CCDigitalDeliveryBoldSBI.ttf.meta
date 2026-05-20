@@ -1,0 +1,22 @@
+fileFormatVersion: 2
+guid: 61407696edd504541ae63b018b6414b4
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - CCDigitalDeliveryWWEXT
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: ba1baf5e55237426d9c0f93cf2b1ad1e, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

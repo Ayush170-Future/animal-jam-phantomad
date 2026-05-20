@@ -18,6 +18,8 @@ MIME = {
     ".mp3":  "audio/mpeg",
     ".wav":  "audio/wav",
     ".ogg":  "audio/ogg",
+    ".mp4":  "video/mp4",
+    ".webm": "video/webm",
 }
 
 def data_uri(path: Path) -> str:
@@ -28,8 +30,8 @@ def data_uri(path: Path) -> str:
 
 def main():
     html = SRC.read_text()
-    # Match 'assets/<file>' (single quoted)
-    pattern = re.compile(r"'assets/([^']+)'")
+    # Match 'assets/<file>' OR "assets/<file>" (both quote styles).
+    pattern = re.compile(r"['\"]assets/([^'\"]+)['\"]")
     matches = sorted(set(pattern.findall(html)))
     print(f"Inlining {len(matches)} assets:")
     sizes = []
@@ -41,7 +43,9 @@ def main():
         sz = p.stat().st_size
         sizes.append((name, sz))
         uri = data_uri(p)
+        # Replace both quote styles.
         html = html.replace(f"'assets/{name}'", f"'{uri}'")
+        html = html.replace(f'"assets/{name}"', f'"{uri}"')
         print(f"  + {name}  ({sz/1024:.1f} KB raw -> {len(uri)/1024:.1f} KB b64)")
     DST.parent.mkdir(parents=True, exist_ok=True)
     DST.write_text(html)

@@ -70,6 +70,7 @@ const ASSETS = {
   mgDressed: 'assets/MG_dressed.webp',
   mgPuppy:   'assets/MG_puppy.webp',
   mgFoodies: 'assets/MG_foodies.webp',
+  ajCard:    'assets/Animal_Jam_Card.png',
   music:     'assets/music.mp3',
   go:        'assets/go.mp3',
   readyset:  'assets/readyset.mp3',
@@ -190,6 +191,7 @@ function loadAll(){
   for (const k of ['mgTemple','mgRoll','mgPest','mgDressed','mgPuppy','mgFoodies']){
     ps.push(loadImage(k, ASSETS[k]));
   }
+  ps.push(loadImage('ajCard', ASSETS.ajCard));
   ps.push(loadAudio('music',    ASSETS.music, true));
   ps.push(loadAudio('go',       ASSETS.go));
   ps.push(loadAudio('readyset', ASSETS.readyset));
@@ -1318,24 +1320,30 @@ function drawEnd(t){
   drawText('PHANTOMS DEFEATED!', 0, 0, 72, '#ffc733', { stroke:'#3a1208', strokeW:15, shadow:'rgba(0,0,0,0.55)', sy:10 });
   ctx.restore();
 
-  // Hero animal on LEFT side
-  const a = chosenAnimal;
-  const img = images[a.walk];
+  // Animal Jam card on LEFT side
+  const cardImg = images.ajCard;
   const heroX = VW * 0.25;
   const heroCy = VH * 0.5;
-  if (img){
-    const frames = a.walkFrames || 8;
-    const fW = img.width / frames, fH = img.height;
-    const dh = 240, dw = fW * (dh/fH);
-    const frame = Math.floor(t * 12) % frames;
-    const py = heroCy - dh/2 + Math.sin(t * 4) * 8;
-    // halo behind hero
-    const rg = ctx.createRadialGradient(heroX, heroCy, 30, heroX, heroCy, 200);
+  if (cardImg){
+    const cardW = 520;
+    const cardH = cardW * (cardImg.height / cardImg.width);
+    const wobble = Math.sin(t * 3) * 6;
+    const bob = Math.sin(t * 4) * 6;
+    // soft halo behind card
+    const rg = ctx.createRadialGradient(heroX, heroCy, 40, heroX, heroCy, 260);
     rg.addColorStop(0, 'rgba(255, 220, 110, 0.42)');
     rg.addColorStop(1, 'rgba(255, 220, 110, 0)');
     ctx.fillStyle = rg;
-    ctx.fillRect(heroX - 200, heroCy - 200, 400, 400);
-    drawSprite(img, frame, fW, fH, heroX - dw/2, py, dw, dh, false);
+    ctx.fillRect(heroX - 260, heroCy - 260, 520, 520);
+    ctx.save();
+    ctx.translate(heroX, heroCy + bob);
+    ctx.rotate(wobble * Math.PI / 180 * 0.25);
+    // drop shadow
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+    roundRect(-cardW/2 + 6, -cardH/2 + 10, cardW, cardH, 18);
+    ctx.fill();
+    ctx.drawImage(cardImg, -cardW/2, -cardH/2, cardW, cardH);
+    ctx.restore();
   }
 
   // RIGHT column: score plate + subtitle + thumbs
@@ -1361,8 +1369,8 @@ function drawEnd(t){
   drawText(gemsTxt, cur, 6, 38, '#fff', { align:'left', stroke:'#1a0d04', strokeW:5 });
   ctx.restore();
 
-  // "100+ MINI-GAMES TO PLAY!" — single line
-  drawText('100+ MINI-GAMES TO PLAY!', rightCx, 290, 34, '#fff', { stroke:'#3a1208', strokeW:9, shadow:'rgba(0,0,0,0.5)', sy:6 });
+  // "40+ MINI-GAMES TO PLAY!" — single line
+  drawText('40+ MINI-GAMES TO PLAY!', rightCx, 290, 34, '#fff', { stroke:'#3a1208', strokeW:9, shadow:'rgba(0,0,0,0.5)', sy:6 });
 
   // Mini game thumbnails — 3 cols x 2 rows of real artwork
   const games = [

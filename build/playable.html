@@ -70,7 +70,7 @@ const ASSETS = {
   mgDressed: 'assets/MG_dressed.webp',
   mgPuppy:   'assets/MG_puppy.webp',
   mgFoodies: 'assets/MG_foodies.webp',
-  ajCard:    'assets/Animal_Jam_Card.png',
+  ajCard:    'assets/animal-jam-highres.webp',
   music:     'assets/music.mp3',
   go:        'assets/go.mp3',
   readyset:  'assets/readyset.mp3',
@@ -718,7 +718,7 @@ function updateIntro(dt){
       p.x = 80 + Math.random() * (VW - 160);
     }
   }
-  if (sceneT > 1.8 || input.justDown){
+  if (input.justDown){
     setScene('picker', initPicker);
   }
 }
@@ -1338,10 +1338,9 @@ function drawEnd(t){
     ctx.save();
     ctx.translate(heroX, heroCy + bob);
     ctx.rotate(wobble * Math.PI / 180 * 0.25);
-    // drop shadow
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
-    roundRect(-cardW/2 + 6, -cardH/2 + 10, cardW, cardH, 18);
-    ctx.fill();
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.55)';
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 8;
     ctx.drawImage(cardImg, -cardW/2, -cardH/2, cardW, cardH);
     ctx.restore();
   }
@@ -1370,7 +1369,7 @@ function drawEnd(t){
   ctx.restore();
 
   // "40+ MINI-GAMES TO PLAY!" — single line
-  drawText('40+ MINI-GAMES TO PLAY!', rightCx, 290, 34, '#fff', { stroke:'#3a1208', strokeW:9, shadow:'rgba(0,0,0,0.5)', sy:6 });
+  drawText('40+ MINI-GAMES TO PLAY!', rightCx, 268, 34, '#fff', { stroke:'#3a1208', strokeW:9, shadow:'rgba(0,0,0,0.5)', sy:6 });
 
   // Mini game thumbnails — 3 cols x 2 rows of real artwork
   const games = [
@@ -1382,10 +1381,10 @@ function drawEnd(t){
     { label: 'FOODIES',  img: 'mgFoodies' }
   ];
   const cols = 3, rows = 2;
-  const thumbSize = 84, gapX = 18, gapY = 26;
+  const thumbSize = 82, gapX = 22, gapY = 52;
   const gridW = thumbSize * cols + gapX * (cols - 1);
   const gridLeft = rightCx - gridW/2 + thumbSize/2;
-  const gridTop = 372;
+  const gridTop = 344;
   for (let i = 0; i < games.length; i++){
     const c = i % cols, r = Math.floor(i / cols);
     const wob = Math.sin(t * 3 + i * 1.2) * 4;

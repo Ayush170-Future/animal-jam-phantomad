@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: PhantomFP_Eye_Material
+  m_Shader: {fileID: 4800000, guid: b5758e018e736134a9d52a21f23c7835, type: 3}
+  m_ValidKeywords:
+  - HQ_ON
+  m_InvalidKeywords:
+  - ALPHA_OFF
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: ff9dead38e44dcb4986e27ef68d59bb7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _Alpha: 1
+    - _DstBlend: 0
+    - _HighlightAlpha: 1
+    - _HighlightOffset: 0
+    - _SrcBlend: 1
+    - _ZWrite: 1
+    m_Colors:
+    - _Color: {r: 0.85882354, g: 0.827451, b: 0.827451, a: 1}
+    - _GreenColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GreenColorOccluded: {r: 1, g: 0, b: 0, a: 1}
+    - _ProbeColorMult: {r: 1, g: 1, b: 1, a: 1}
+    - _RedColor: {r: 0.89705884, g: 0.84465456, b: 0.77833045, a: 1}
+  m_BuildTextureStacks: []

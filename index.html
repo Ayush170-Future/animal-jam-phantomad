@@ -946,11 +946,17 @@ function initPlay(){
   playState.score = 0;
   playState.hearts = MAX_HEARTS;
   playState.timeLeft = GAME_DURATION;
-  playState.spawnTimer = 0.4;
-  playState.gemTimer = 1.5;
+  playState.spawnTimer = 0.5;
+  playState.gemTimer = 0.8;
   playState.shake = 0;
   playState.difficulty = 1;
   playState.gemCollects.length = 0;
+  // Movement tutorial: the game stays frozen (no phantoms, gems, or clock) and shows
+  // the arrows until the player actually steers the animal. A short grace follows the
+  // first move, then the threat begins — so we know the player understands the control.
+  playState.hintAlpha = 0;       // eases in while waiting, out once moved
+  playState.moved = false;       // set true on the player's first steer
+  playState.graceT = 0;          // brief delay after first move before phantoms fall
 }
 
 function updatePlay(dt){
@@ -987,17 +993,31 @@ function updatePlay(dt){
   if (P.invuln > 0) P.invuln -= dt;
   if (P.flashT > 0) P.flashT -= dt;
 
-  // Spawn phantoms
-  playState.spawnTimer -= dt;
-  if (playState.spawnTimer <= 0){
-    spawnPhantom();
-    playState.spawnTimer = (0.95 - playState.difficulty * 0.25) + Math.random() * 0.35;
+  // Movement tutorial — freeze the game until the player steers the animal.
+  if (!playState.moved){
+    playState.hintAlpha += (1 - playState.hintAlpha) * Math.min(1, dt * 7);
+    if (Math.abs(moveAmt) > 2){ playState.moved = true; playState.graceT = 0.6; }
+  } else {
+    playState.hintAlpha += (0 - playState.hintAlpha) * Math.min(1, dt * 7);
+    if (playState.graceT > 0) playState.graceT -= dt;
   }
-  // Spawn gems
-  playState.gemTimer -= dt;
-  if (playState.gemTimer <= 0){
-    spawnGem();
-    playState.gemTimer = 1.4 + Math.random() * 1.4;
+  const inTutorial = !playState.moved || playState.graceT > 0;
+
+  // Spawn phantoms (held until the player has moved)
+  if (!inTutorial){
+    playState.spawnTimer -= dt;
+    if (playState.spawnTimer <= 0){
+      spawnPhantom();
+      playState.spawnTimer = (0.95 - playState.difficulty * 0.25) + Math.random() * 0.35;
+    }
+  }
+  // Spawn gems (held until the player has moved)
+  if (!inTutorial){
+    playState.gemTimer -= dt;
+    if (playState.gemTimer <= 0){
+      spawnGem();
+      playState.gemTimer = 1.4 + Math.random() * 1.4;
+    }
   }
 
   // Update phantoms
@@ -1083,8 +1103,10 @@ function updatePlay(dt){
   // shake decay
   playState.shake *= Math.pow(0.001, dt);
 
-  // timer
-  playState.timeLeft -= dt;
+  // timer — paused during the tutorial window so the player gets full play time
+  if (!inTutorial){
+    playState.timeLeft -= dt;
+  }
   if (playState.timeLeft <= 0 || playState.hearts <= 0){
     endWon = playState.timeLeft <= 0 && playState.hearts > 0;
     if (!endWon) playSfx('stinger');
@@ -1305,6 +1327,46 @@ function drawHUD(t){
   drawText(tNum, 0, 4, 50, '#3a1f08', { stroke:'#ffe8a0', strokeW:5 });
   ctx.restore();
 }
+// Clean single-stroke arrow — drawn like one confident pen stroke (shaft + head)
+// with rounded caps, flat gold over a dark outline. Points left (dir=-1) or right
+// (dir=+1) and pulses outward to suggest motion.
+function drawGameArrow(cx, cy, dir, t, alpha){
+  if (alpha < 0.02) return;
+  const bob = (Math.sin(t * 3) * 0.5 + 0.5) * 14;       // 0..14px outward pulse
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx + dir * bob, cy);
+  ctx.scale(dir, 1);                                    // stroke is built pointing +x
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  // shaft + chevron head as a single stroke
+  const stroke = () => {
+    ctx.beginPath();
+    ctx.moveTo(-40, 0); ctx.lineTo(40, 0);              // shaft
+    ctx.moveTo(14, -26); ctx.lineTo(46, 0); ctx.lineTo(14, 26); // head
+  };
+  ctx.strokeStyle = '#3a1208'; ctx.lineWidth = 24; stroke(); ctx.stroke();  // dark outline
+  ctx.strokeStyle = '#ffce3a'; ctx.lineWidth = 13; stroke(); ctx.stroke();  // flat gold
+  ctx.restore();
+}
+// Movement tutorial overlay: caption + a gold arrow on each side of the animal,
+// both at the animal's body level.
+function drawMoveHint(t){
+  const a = playState.hintAlpha;
+  if (a < 0.02) return;
+  const P = playState.player;
+  const arrowY = P.y - ANIMAL_DISPLAY_H * 0.45;         // same level as the animal's body
+  const off = Math.min(VW * 0.30, 210);
+  drawGameArrow(P.x - off, arrowY, -1, t, a);
+  drawGameArrow(P.x + off, arrowY,  1, t, a);
+  // caption above
+  ctx.save();
+  ctx.globalAlpha = a;
+  const cap = 0.97 + Math.sin(t * 4) * 0.03;
+  ctx.translate(VW/2, arrowY - 290);
+  ctx.scale(cap, cap);
+  drawText('DRAG TO MOVE', 0, 0, 46, '#ffd34d', { stroke:'#3a1208', strokeW:11, shadow:'rgba(0,0,0,0.5)', sy:5 });
+  ctx.restore();
+}
 function drawPlay(t){
   // camera shake offset
   let sx = 0, sy = 0;
@@ -1317,6 +1379,7 @@ function drawPlay(t){
   drawSkyAndBg(t);
   drawGameWorld(t);
   ctx.restore();
+  if (playState.hintAlpha > 0.02) drawMoveHint(t);
   drawHUD(t);
 }
 

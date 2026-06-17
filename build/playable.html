@@ -174,7 +174,8 @@ canvas.addEventListener('touchcancel', ptrUp, { passive: false });
 // ASSET LOADER
 // ============================================================
 const images = {};
-const audios = {};
+const audios = {};        // key -> primary Audio element (music + pool[0])
+const sfxPools = {};      // key -> array of pre-unlocked Audio elements for overlap
 let assetsLoaded = 0, assetsTotal = 0;
 
 function loadImage(key, src){
@@ -193,12 +194,25 @@ function loadAudio(key, src, loop){
     a.preload = 'auto';
     a.src = src;
     a.loop = !!loop;
-    if (loop) a.volume = 0.5; else a.volume = 0.85;
+    a.volume = loop ? 0.4 : 0.85;                     // music sits under the SFX
     const done = () => { audios[key] = a; assetsLoaded++; res(); };
     a.oncanplaythrough = done;
     a.onerror = () => { console.warn('audio fail', key); assetsLoaded++; res(); };
     // safety timeout — some browsers stall canplaythrough
     setTimeout(done, 2500);
+    if (!loop){
+      // Pre-create a small pool so each element can be unlocked inside the first
+      // user gesture. (cloneNode-at-play elements are NOT unlocked on iOS → silent.)
+      const pool = [a];
+      for (let i = 1; i < 6; i++){
+        const c = new Audio();
+        c.preload = 'auto';
+        c.src = src;
+        c.volume = a.volume;
+        pool.push(c);
+      }
+      sfxPools[key] = pool;
+    }
   });
 }
 
@@ -232,26 +246,42 @@ function loadAll(){
 // AUDIO
 // ============================================================
 let muted = false, audioUnlocked = false;
+// Unlock every pooled SFX element by play→pause (muted) within a user gesture,
+// so later playSfx() calls are allowed to sound on iOS/Android. Runs once.
+function primeSfxPools(){
+  // Synchronous unlock: calling play() inside the gesture unlocks the element on
+  // iOS; pausing immediately afterwards keeps it unlocked with no pending async
+  // handler to race the first real playSfx().
+  Object.keys(sfxPools).forEach(k => sfxPools[k].forEach(a => {
+    try {
+      a.muted = true;
+      const p = a.play();
+      if (p && p.catch) p.catch(() => {});   // swallow AbortError from the immediate pause
+      a.pause();
+      a.currentTime = 0;
+      a.muted = false;
+    } catch(e){}
+  }));
+}
 function unlockAudio(){
-  if (audioUnlocked) return;
-  // Don't start game audio while the intro video is playing (landscape only).
+  // Don't start the music over the intro video (landscape only); pools are primed
+  // on the first canvas tap, which only happens after the video is gone.
   if (scene === 'videoIntro') return;
-  audioUnlocked = true;
-  // touch every audio briefly so iOS unlocks
-  Object.values(audios).forEach(a => {
-    try { a.play().then(()=>{ if (!a.loop) { a.pause(); a.currentTime = 0; } }).catch(()=>{}); } catch(e){}
-  });
-  if (audios.music && !muted){ audios.music.play().catch(()=>{}); }
+  if (!audioUnlocked){
+    audioUnlocked = true;
+    primeSfxPools();
+  }
+  // Start (or resume) the looping music whenever it should be playing.
+  if (audios.music && !muted && audios.music.paused){ audios.music.play().catch(()=>{}); }
 }
 function playSfx(key){
   if (muted) return;
-  const src = audios[key]; if (!src) return;
-  try {
-    // Clone for overlap
-    const a = src.cloneNode();
-    a.volume = src.volume;
-    a.play().catch(()=>{});
-  } catch(e){}
+  const pool = sfxPools[key]; if (!pool) return;
+  // Reuse a free (paused/ended) element; fall back to the first if all are busy.
+  let a = null;
+  for (const el of pool){ if (el.paused || el.ended){ a = el; break; } }
+  if (!a) a = pool[0];
+  try { a.muted = false; a.currentTime = 0; a.play().catch(()=>{}); } catch(e){}
 }
 function setMuted(v){
   muted = v;
@@ -655,7 +685,7 @@ function unmuteVideo(){
     if (videoState.el.paused) videoState.el.play().catch(()=>{}); } catch(e){}
   showSoundHint(false);
 }
-function endVideoIntro(){
+function endVideoIntro(fromGesture){
   const videoT = (videoState.el && isFinite(videoState.el.currentTime)) ? videoState.el.currentTime : 0;
   if (videoState.el){ try { videoState.el.pause(); } catch(e){} videoState.el.classList.add('hidden'); }
   if (videoState.skipEl) videoState.skipEl.classList.add('hidden');
@@ -665,8 +695,10 @@ function endVideoIntro(){
     try { audios.music.currentTime = Math.min(videoT, Math.max(0, dur - 0.05)); } catch(e){}
   }
   setScene('intro', initIntro);
-  audioUnlocked = false;
-  unlockAudio();
+  // Skip is a user gesture → safe to prime SFX + start music now. On natural end
+  // (no gesture) we leave priming to the first canvas tap, but still try the music.
+  if (fromGesture) unlockAudio();
+  else if (audios.music && !muted) audios.music.play().catch(()=>{});
 }
 function initVideoIntro(){
   videoState.el     = document.getElementById('intro-video');
@@ -676,7 +708,7 @@ function initVideoIntro(){
   if (videoState.el){
     videoState.el.classList.remove('hidden');
     videoState.el.currentTime = 0;
-    videoState.el.onended = () => { videoState.ended = true; endVideoIntro(); };
+    videoState.el.onended = () => { videoState.ended = true; endVideoIntro(false); };
     videoState.el.muted = false; videoState.el.volume = 1.0;
     const p = videoState.el.play();
     if (p && p.catch){ p.catch(() => {
@@ -685,7 +717,7 @@ function initVideoIntro(){
     }); }
   }
   if (videoState.skipEl){ videoState.skipEl.classList.add('hidden');
-    videoState.skipEl.onclick = (e) => { e.stopPropagation(); endVideoIntro(); }; }
+    videoState.skipEl.onclick = (e) => { e.stopPropagation(); endVideoIntro(true); }; }
   if (videoState.hintEl){ videoState.hintEl.classList.remove('show');
     videoState.hintEl.onclick = (e) => { e.stopPropagation(); unmuteVideo(); }; }
   ctx.setTransform(1,0,0,1,0,0); ctx.fillStyle='#000'; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -696,7 +728,7 @@ function updateVideoIntro(dt){
     if (videoState.el.muted) unmuteVideo();
     if (videoState.el.paused){ try { videoState.el.play(); } catch(e){} }
   }
-  if (sceneT > 11.5) endVideoIntro();
+  if (sceneT > 11.5) endVideoIntro(false);
 }
 
 // ---- INTRO ----

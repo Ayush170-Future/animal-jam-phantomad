@@ -1,0 +1,18 @@
+.claude/settings.local.json
+.claude/tools/image-gen/node_modules/
+
+# OS / editor junk
+.DS_Store
+**/.DS_Store
+
+# Local archives & raw asset dumps (not needed for the playable / Pages)
+*.zip
+.claude.zip
+/3D Models/
+/Characters/
+/SFX/
+/UI + 2D Assets/
+ajm_musFallingPhantoms.wav
+test-director.png
+test-nano-banana-pro.png
+*.bak
